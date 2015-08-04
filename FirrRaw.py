@@ -66,8 +66,8 @@ class FirrRaw():
         else: 
             corr = where(self.std<2.)
             
-        self.tms_all = array(tms)
-        self.timestamp = mean(tms)    
+        self.all_tms = array(tms)
+        self.tms = mean(tms)    
         self.correct_pixels = corr
 
     

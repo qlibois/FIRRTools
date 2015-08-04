@@ -71,15 +71,15 @@ def get_calib(amb1,hot,scene,amb2,thot,tscene,tamb2,Tamb1,Thot,Tamb2,filtre,emis
     Lamb2=radiance(Tamb2+273.16,filtre,emiss_wls,emiss,Tpma2+273.16)
 
     if tamb2 == 0: # no calibration with next
-        if shape(hot)[0] == 1:
-            G = (hot[0,:]-amb1[0,:])/(Lhot-Lamb1)
-        else:
+#        if shape(hot)[0] == 1:
+#            G = (hot[0,:]-amb1[0,:])/(Lhot-Lamb1)
+#        else:
             G = (hot-amb1)/(Lhot-Lamb1)
     else:
-        if shape(hot)[0] == 1:
-            G = (tamb2*(hot[0,:]-amb1[0,:])-thot*(amb2[0,:]-amb1[0,:]))/(tamb2*(Lhot-Lamb1)-thot*(Lamb2-Lamb1))  
-     
-        else:
+#        if shape(hot)[0] == 1:
+#            G = (tamb2*(hot[0,:]-amb1[0,:])-thot*(amb2[0,:]-amb1[0,:]))/(tamb2*(Lhot-Lamb1)-thot*(Lamb2-Lamb1))  
+#     
+#        else:
             G = (tamb2*(hot-amb1)-thot*(amb2-amb1))/(tamb2*(Lhot-Lamb1)-thot*(Lamb2-Lamb1))
         
     if shape(hot)[0] == 1: 
@@ -94,8 +94,7 @@ def get_calib(amb1,hot,scene,amb2,thot,tscene,tamb2,Tamb1,Thot,Tamb2,filtre,emis
         ncorr=size(hot)
         
     #---------------------------------
-    
-          
+
     nview=shape(scene)[0]      
     bt=zeros([nview,ncorr])
     Lscene=zeros([nview,ncorr])
