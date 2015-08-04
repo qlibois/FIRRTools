@@ -1,0 +1,34 @@
+GENERAL
+Software Version = v.1.32
+Random Access File = C:\INO\TRLP\LUT_test_80x60.txt
+Sequence File = C:\INO\TRLP\Slow_LRTECH_AHNZ_no_open.txt :
+Filter Wheel position Value :
+    1: Open
+    2: 10-12µm
+    3: 12-14µm
+    4: 17.0–18.5µm
+    5: 22.5–27.5µm
+    6: 7.9–9.5µm
+    7: 20.5–22.5µm
+    8: 18.5–20.5µm
+    9: 17.25-19.75µm
+   10: 30–50µm
+   11: Blank
+
+IRXCAM
+Internal filter = Disabled
+TEC Status = Enabled
+TEC SetPoints = 15.0 °C
+Diff. Gain = Differential Gain 4
+Shutter Status = Open
+VBPIXEL = 63 mV
+VBREF = 819 mV
+VBLINE = 2500 mV
+VOUT_CM = 2500 mV
+Random Access File = C:\INO\TRLP\LUT_test_80x60.txt
+
+Black Body
+Channel #1 (HBB) Status = Enabled
+Channel #1 (HBB) SetPoint = 55.000 °C
+Channel #2 (ABB) Status = Disabled
+Channel #2 (ABB) SetPoint = 29.000 °C

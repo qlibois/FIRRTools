@@ -3,8 +3,8 @@
 from pylab import *
 from scipy import ndimage
 from datetime import datetime
-
 import os
+
 local_path=os.path.dirname(os.path.abspath(__file__))
 
 """Look up table to convert radiance into brightness temperature"""
@@ -20,19 +20,11 @@ def get_time_dir(directory):
 def get_time_seq(sequence):
     return datetime.strptime(sequence[-24:-5],"%Y-%m-%d_%H-%M-%S")    
     
-def get_av(data,n):
-    
+def get_av(data,n):  
     data_2D = data.reshape(60,80)
     nav = (1+2*n)
     data_spav = ndimage.filters.uniform_filter(data,size=nav,mode="constant")
-    
-#    figure(1)
-#    imshow(data_2D)
-#
-#    figure(2)
-#    imshow(data_spav)    
-#    show()
-#    
+        
     return ravel(data_spav)        
     
 """Return transmitted radiance emitted by a blackbody (emissivity can be specified) in a given band""" 
@@ -50,7 +42,7 @@ def radiance(temp,filtre,epsilon_wls,epsilon,Tpm):
         trans=zeros_like(wls)
         
     else:     
-        data=loadtxt("Transmittance/%s.dat"%filtre,skiprows=1)    
+        data=loadtxt("%s/Params/Transmittance/%s.dat"%(local_path,filtre),skiprows=1)    
         wls=1e-6*data[:,0]
         trans=maximum(data[:,1],0)
         
