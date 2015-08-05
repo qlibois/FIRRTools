@@ -58,14 +58,19 @@ class FirrRaw():
         self.std = std(array(data_1D),axis=0)
                 
         if spav == "all":
-            corr=where(self.std<1.)  # identify eroneous pixels
+            corr=where(self.std<5.)[0]  # identify eroneous pixels
            
         elif isinstance(spav, int): 
-            corr = where(self.std<1.2)     
+            corr = where(self.std<1.2)[0]  
             
         else: 
             corr = where(self.std<2.)
             
+        if not corr.size:
+            print self.name,"No correct pixels",self.std
+            plot(array(data_1D))[0]
+            show()
+
         self.all_tms = array(tms)
         self.tms = mean(tms)    
         self.correct_pixels = corr

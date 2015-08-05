@@ -73,11 +73,11 @@ class FirrSequence():
         all_std = zeros([11,self.npos,npix])    # all std from raw files are stored in all_std (11 filter wheel positions, npos pointing mirror positions
         all_tms = zeros([11,self.npos])         # relative timestamp of each raw file (average through all frames)
         real_tms = []                           # absolute timestamp of each mirror position (when filter wheel in position 5)        
-        
-        
-        for fichier in self.files:  
-            raw_data = FirrRaw(fichier)
+                
+        for fichier in self.files:              
+            raw_data = FirrRaw(fichier)            
             raw_data.analyze(raw_data.nframes,spav=spav) 
+            
             correct_pixels = raw_data.correct_pixels
       
             if raw_data.mpos == 2 and all_mean[raw_data.fpos-1,0,:].all() == 0:               # keep only first calibration                 
@@ -97,8 +97,8 @@ class FirrSequence():
 
                 all_mean[raw_data.fpos-1,scene+2,correct_pixels] = raw_data.mean[correct_pixels]
                 all_std[raw_data.fpos-1,scene+2,correct_pixels] = raw_data.std[correct_pixels]
-                all_tms[raw_data.fpos-1,scene+2] = raw_data.tms
-#                   
+                all_tms[raw_data.fpos-1,scene+2] = raw_data.tms    
+        
         for np in range(self.npos):
             real_tms+=[self.date0+timedelta(seconds=1e-3*all_tms[5,np])]                       
           
@@ -164,7 +164,7 @@ class FirrSequence():
                 Tpma2 = next_seq.temp_pm[i_abb2]             # pointing mirror temperature at next ABB measurement
                 tamb2 = dt + next_all_tms[k,0]-tamb1             # time after first ambient measurement
                 amb2 = next_all_mean[k,0,:]      
-           
+                
             else: # no interpolation in this case                
                 Tamb2 = Tamb1
                 Tpma2 = Tpma1
@@ -180,7 +180,7 @@ class FirrSequence():
             offset[k,:] = B0
             gain[k,:] = G      
                  
-        self.all_bt = mean(ma.masked_equal(all_bt,0),axis=2) # contains 0 where not calculated         
+        self.all_bt = mean(ma.masked_equal(all_bt,0),axis=2) # contains 0 where not calculated  
         self.all_radiance = mean(ma.masked_equal(all_radiance,0),axis=2)
         self.offset = offset
         self.gain = gain 
@@ -204,7 +204,7 @@ class FirrSequence():
             num = filters_position.index(k)   
             correct_pixels = [i for i in illuminated if all_mean[num,0,i]*all_mean[num,1,i]!=0] 
         
-            if correct_pixels==[]: #anomalies on all pixels, then no calculations
+            if not correct_pixels.size: #anomalies on all pixels, then no calculations
                 print "NO GOOD PIXELS"
                 mean_netd[num]=0
                 mean_sigma[num]=0
