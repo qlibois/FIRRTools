@@ -47,6 +47,7 @@ def radiance(temp,filtre,epsilon_wls,epsilon,Tpm):
         trans=maximum(data[:,1],0)
         
     new_em=interp(wls,1e-6*epsilon_wls,epsilon)   
+    
     # Accounting for radiation at Tpm reflected by BB 
     planck=2*h*c**2/wls**5*(new_em*1./(exp(h*c/(wls*kb*(temp)))-1)+(1-new_em)*1./(exp(h*c/(wls*kb*(Tpm)))-1))*trans*0.01
     
@@ -65,9 +66,9 @@ def get_calib(amb1,hot,scene,amb2,thot,tscene,tamb2,Tamb1,Thot,Tamb2,filtre,emis
        r accounts for background linear variation"""
        
     # solving linear sysem to get B0, r, G   
-    Lamb1=radiance(Tamb1+273.16,filtre,emiss_wls,emiss,Tpma1+273.16)
-    Lhot=radiance(Thot+273.16,filtre,emiss_wls,emiss,Tpmh+273.16)
-    Lamb2=radiance(Tamb2+273.16,filtre,emiss_wls,emiss,Tpma2+273.16)
+    Lamb1=radiance(Tamb1+273.15,filtre,emiss_wls,emiss,Tpma1+273.15)
+    Lhot=radiance(Thot+273.15,filtre,emiss_wls,emiss,Tpmh+273.15)
+    Lamb2=radiance(Tamb2+273.15,filtre,emiss_wls,emiss,Tpma2+273.15)
 
     if tamb2 == 0: # no calibration with next
        G = (hot-amb1)/(Lhot-Lamb1)
@@ -77,8 +78,7 @@ def get_calib(amb1,hot,scene,amb2,thot,tscene,tamb2,Tamb1,Thot,Tamb2,filtre,emis
    
     B0 = amb1-G*Lamb1
     r = (hot-B0-G*Lhot)/thot
-    scene=scene[:,:]
-    ncorr=size(hot)
+    ncorr = size(hot)
         
     #---------------------------------
 
@@ -88,7 +88,7 @@ def get_calib(amb1,hot,scene,amb2,thot,tscene,tamb2,Tamb1,Thot,Tamb2,filtre,emis
   
     # Calibration for all scene measurements and all valid pixels
     for nv in range(nview):
-        correct_pixels=where(amb1[0]*hot[0]*scene[nv]*amb2[0]!=0)                
+        correct_pixels=where(amb1[0]*hot[0]*scene[nv,:]*amb2[0]!=0)[0]             
         Lscene[nv,:]=(scene[nv,:]-B0-r*tscene[nv])/G
         bt[nv,correct_pixels]=find_temp_planck(Lscene[nv,:],filtre)[correct_pixels]
 #        if filtre=="F0008":

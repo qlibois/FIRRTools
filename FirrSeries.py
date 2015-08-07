@@ -14,9 +14,8 @@ class FirrSeries():
     def __init__(self,folder,start_meas=datetime(2000,1,1),end_meas=datetime(2100,1,1)):    
         self.name = folder 
         sequences = glob.glob("%s/*"%self.name) 
-        sequences = [s for s in sequences if os.path.isdir(s)]
-        sequences.sort()  
-        print sequences    
+        sequences = [s for s in sequences if os.path.isdir(s) and "Temperature.txt" in os.listdir(s)]
+        sequences.sort()   
         all_dates = []
         for s in sequences:
             all_dates+=[Toolbox.get_time_seq(s)]
@@ -34,12 +33,11 @@ class FirrSeries():
         all_temp = []
         all_time = []
         for seq in self.sequences:
-            if "Temperature.txt" in os.listdir(a):
-                t = seq.get_time_seq()
-                ms = t-self.start   
-                data = genfromtxt("%s/Temperature.txt"%a,delimiter=",",skip_header=1,skip_footer=1,usecols = (0,9,17,19,21,23,25,27,29,31,33))                               
-                all_time+= [self.start+timedelta(seconds=1e-3*d+ms.total_seconds()) for d in  data[:,0]]
-                all_temp+= list(data[:,1:])
+            t = Toolbox.get_time_seq(seq)
+            ms = t-self.start_date  
+            data = genfromtxt("%s/Temperature.txt"%seq,delimiter=",",skip_header=1,skip_footer=1,usecols = (0,9,17,19,21,23,25,27,29,31,33))                               
+            all_time+= [self.start_date+timedelta(seconds=1e-3*d+ms.total_seconds()) for d in data[:,0]]
+            all_temp+= list(data[:,1:])
                 
         self.temp_time = all_time
         self.temperature = array(all_temp)        

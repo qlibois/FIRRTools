@@ -15,6 +15,7 @@ filters_positions=['open','F0008','F0009','F0034','F0011','F0007','F0036','F0035
 """Mask non-illuminated pixels for calculations"""
 local_path = os.path.dirname(os.path.abspath(__file__)) # get path to local directory
 illuminated = list(loadtxt("%s/Params/illuminated_pixels.txt"%local_path)) # illuminated pixels
+non_illuminated = list(loadtxt("%s/Params/non_illuminated_pixels.txt"%local_path)) # illuminated pixels
 mask_illuminated=[k not in illuminated for k in range(4800)]
 
 """LR Tech BB emissivity"""
@@ -76,28 +77,29 @@ class FirrSequence():
                 
         for fichier in self.files:              
             raw_data = FirrRaw(fichier)            
-            raw_data.analyze(raw_data.nframes,spav=spav) 
+            raw_data.analyze(raw_data.nframes,spav=spav)
             
-            correct_pixels = raw_data.correct_pixels
-      
-            if raw_data.mpos == 2 and all_mean[raw_data.fpos-1,0,:].all() == 0:               # keep only first calibration                 
-                all_mean[raw_data.fpos-1,0,correct_pixels] = raw_data.mean[correct_pixels]
-                all_std[raw_data.fpos-1,0,correct_pixels] = raw_data.std[correct_pixels]
-                all_tms[raw_data.fpos-1,0] = raw_data.tms 
-                
-            elif raw_data.mpos == 3 and all_mean[raw_data.fpos-1,1,:].all() == 0:               # keep only first calibration
-                all_mean[raw_data.fpos-1,1,correct_pixels] = raw_data.mean[correct_pixels]
-                all_std[raw_data.fpos-1,1,correct_pixels] = raw_data.std[correct_pixels]
-                all_tms[raw_data.fpos-1,1] = raw_data.tms  
-                
-            elif raw_data.mpos == 0 or raw_data.mpos == 1:  # nadir or zenith view
-                scene = 0
-                while all_mean[raw_data.fpos-1,scene+2,:].any()!=0: 
-                    scene+=1                     
-
-                all_mean[raw_data.fpos-1,scene+2,correct_pixels] = raw_data.mean[correct_pixels]
-                all_std[raw_data.fpos-1,scene+2,correct_pixels] = raw_data.std[correct_pixels]
-                all_tms[raw_data.fpos-1,scene+2] = raw_data.tms    
+            if raw_data.good: # do not read ill files           
+                correct_pixels = raw_data.correct_pixels
+          
+                if raw_data.mpos == 2 and all_mean[raw_data.fpos-1,0,:].all() == 0:               # keep only first calibration                 
+                    all_mean[raw_data.fpos-1,0,correct_pixels] = raw_data.mean[correct_pixels]
+                    all_std[raw_data.fpos-1,0,correct_pixels] = raw_data.std[correct_pixels]
+                    all_tms[raw_data.fpos-1,0] = raw_data.tms 
+                    
+                elif raw_data.mpos == 3 and all_mean[raw_data.fpos-1,1,:].all() == 0:               # keep only first calibration
+                    all_mean[raw_data.fpos-1,1,correct_pixels] = raw_data.mean[correct_pixels]
+                    all_std[raw_data.fpos-1,1,correct_pixels] = raw_data.std[correct_pixels]
+                    all_tms[raw_data.fpos-1,1] = raw_data.tms  
+                    
+                elif raw_data.mpos == 0 or raw_data.mpos == 1:  # nadir or zenith view
+                    scene = 0
+                    while all_mean[raw_data.fpos-1,scene+2,:].any()!=0: 
+                        scene+=1                     
+    
+                    all_mean[raw_data.fpos-1,scene+2,correct_pixels] = raw_data.mean[correct_pixels]
+                    all_std[raw_data.fpos-1,scene+2,correct_pixels] = raw_data.std[correct_pixels]
+                    all_tms[raw_data.fpos-1,scene+2] = raw_data.tms    
         
         for np in range(self.npos):
             real_tms+=[self.date0+timedelta(seconds=1e-3*all_tms[5,np])]                       
@@ -110,7 +112,7 @@ class FirrSequence():
     def get_time_seq(self):
         return datetime.strptime(self.folder[-24:-5],"%Y-%m-%d_%H-%M-%S")    
     
-    def get_radiance(self,list_filters,method="next",spav="all"): 
+    def get_radiance(self,list_filters,method="next",spav="all",non_ill=1): 
         """Compute calibration for all filters indicated, correcting if necessary for the temperature drift between BB and scene measurements
         method : "next" to use following sequence to interpolate background signal"""
         self.organized(spav=spav)
@@ -120,7 +122,7 @@ class FirrSequence():
             all_mean = self.all_mean
             l = 2           
         else:
-            all_mean = self.all_mean[:,:,[illuminated]] # calculations on illuminated pixels only  
+            all_mean = self.all_mean[:,:,illuminated]-non_ill*self.all_mean[:,:,non_illuminated] # calculations on illuminated pixels only  
             l = len(illuminated)
             
         all_tms = self.all_tms
@@ -138,8 +140,9 @@ class FirrSequence():
             
             if spav == "all":
                 next_all_mean = next_seq.all_mean[:,:,:]
+                
             else:
-                next_all_mean = next_seq.all_mean[:,:,[illuminated]]
+                next_all_mean = next_seq.all_mean[:,:,illuminated]
                 
             next_all_tms = next_seq.all_tms                      
                       
