@@ -59,12 +59,12 @@ class FirrSequence():
         self.date0 = self.get_time_seq() # absolute timestamp of folder read in the name
         self.next=next_folder # use next folder to compute calibration in case of temperature variations
 
-    def organized(self,spav="all"):
+    def organized(self,spav="all",non_ill=1):
         """ Sort all raw data in a 11 x npos array
             structure of all_mean = AH then ZZZ or NN or NZ for instance 
             mirror positions : ["N","Z","A","H"] """
             
-        if spav == "all":
+        if spav == "all" or spav == "fast":
             npix = 2
             
         else:
@@ -74,37 +74,37 @@ class FirrSequence():
         all_std = zeros([11,self.npos,npix])    # all std from raw files are stored in all_std (11 filter wheel positions, npos pointing mirror positions
         all_tms = zeros([11,self.npos])         # relative timestamp of each raw file (average through all frames)
         real_tms = []                           # absolute timestamp of each mirror position (when filter wheel in position 5)        
-                
+        counter_filters = zeros([11])           # number of scene positions already accoiunted for for each filter
+        
         for fichier in self.files:              
             raw_data = FirrRaw(fichier)            
-            raw_data.analyze(raw_data.nframes,spav=spav)
-            
-            if raw_data.good: # do not read ill files           
-                correct_pixels = raw_data.correct_pixels
-          
-                if raw_data.mpos == 2 and all_mean[raw_data.fpos-1,0,:].all() == 0:               # keep only first calibration                 
-                    all_mean[raw_data.fpos-1,0,correct_pixels] = raw_data.mean[correct_pixels]
-                    all_std[raw_data.fpos-1,0,correct_pixels] = raw_data.std[correct_pixels]
-                    all_tms[raw_data.fpos-1,0] = raw_data.tms 
-                    
-                elif raw_data.mpos == 3 and all_mean[raw_data.fpos-1,1,:].all() == 0:               # keep only first calibration
-                    all_mean[raw_data.fpos-1,1,correct_pixels] = raw_data.mean[correct_pixels]
-                    all_std[raw_data.fpos-1,1,correct_pixels] = raw_data.std[correct_pixels]
-                    all_tms[raw_data.fpos-1,1] = raw_data.tms  
-                    
-                elif raw_data.mpos == 0 or raw_data.mpos == 1:  # nadir or zenith view
-                    scene = 0
-                    while all_mean[raw_data.fpos-1,scene+2,:].any()!=0: 
-                        scene+=1                     
-    
-                    all_mean[raw_data.fpos-1,scene+2,correct_pixels] = raw_data.mean[correct_pixels]
-                    all_std[raw_data.fpos-1,scene+2,correct_pixels] = raw_data.std[correct_pixels]
-                    all_tms[raw_data.fpos-1,scene+2] = raw_data.tms    
-        
+            raw_data.analyze(raw_data.nframes,spav=spav,non_ill=non_ill)
+#            print fichier,raw_data.good
+#            if raw_data.good: # do not read ill files    
+            correct_pixels = raw_data.correct_pixels
+      
+            if raw_data.mpos == 2 and all_mean[raw_data.fpos-1,0,:].all() == 0:               # keep only first calibration                 
+                all_mean[raw_data.fpos-1,0,correct_pixels] = raw_data.mean[correct_pixels]
+                all_std[raw_data.fpos-1,0,correct_pixels] = raw_data.std[correct_pixels]
+                all_tms[raw_data.fpos-1,0] = raw_data.tms 
+                
+            elif raw_data.mpos == 3 and all_mean[raw_data.fpos-1,1,:].all() == 0:               # keep only first calibration
+                all_mean[raw_data.fpos-1,1,correct_pixels] = raw_data.mean[correct_pixels]
+                all_std[raw_data.fpos-1,1,correct_pixels] = raw_data.std[correct_pixels]
+                all_tms[raw_data.fpos-1,1] = raw_data.tms  
+                
+            elif raw_data.mpos == 0 or raw_data.mpos == 1:  # nadir or zenith view
+                scene = counter_filters[raw_data.fpos-1] + 2                                           
+                all_mean[raw_data.fpos-1,scene,correct_pixels] = raw_data.mean[correct_pixels]
+                all_std[raw_data.fpos-1,scene,correct_pixels] = raw_data.std[correct_pixels]
+                all_tms[raw_data.fpos-1,scene] = raw_data.tms    
+                counter_filters[raw_data.fpos-1]+=1 
+
+                
         for np in range(self.npos):
             real_tms+=[self.date0+timedelta(seconds=1e-3*all_tms[5,np])]                       
           
-        self.all_mean = all_mean
+        self.all_mean = ma.masked_equal(all_mean,0)
         self.all_std = all_std
         self.all_tms = all_tms
         self.real_timestamp = real_tms
@@ -115,10 +115,10 @@ class FirrSequence():
     def get_radiance(self,list_filters,method="next",spav="all",non_ill=1): 
         """Compute calibration for all filters indicated, correcting if necessary for the temperature drift between BB and scene measurements
         method : "next" to use following sequence to interpolate background signal"""
-        self.organized(spav=spav)
+        self.organized(spav=spav,non_ill=non_ill)
         nview = self.npos-2   # number of scene measurements in a complete sequence
         
-        if spav == "all":
+        if spav == "all" or spav == "fast":
             all_mean = self.all_mean
             l = 2           
         else:
@@ -138,7 +138,7 @@ class FirrSequence():
                           
             next_seq.organized(spav = spav)
             
-            if spav == "all":
+            if spav == "all" or spav == "fast":
                 next_all_mean = next_seq.all_mean[:,:,:]
                 
             else:
@@ -183,8 +183,8 @@ class FirrSequence():
             offset[k,:] = B0
             gain[k,:] = G      
                  
-        self.all_bt = mean(ma.masked_equal(all_bt,0),axis=2) # contains 0 where not calculated  
-        self.all_radiance = mean(ma.masked_equal(all_radiance,0),axis=2)
+        self.all_bt = ma.masked_equal(ma.average(ma.masked_equal(all_bt,0),axis=2),0) # contains 0 where not calculated  
+        self.all_radiance = ma.average(ma.masked_equal(all_radiance,0),axis=2) # moyenne spatiale des radiances
         self.offset = offset
         self.gain = gain 
                        

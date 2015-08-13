@@ -21,8 +21,7 @@ rc('text', usetex=True)
 rc('xtick',labelsize=22) 
 rc('ytick',labelsize=22)
 
-
-filtres=['F0008','F0009','F0034','F0011','F0007','F0036','F0035','F0010','F0014']
+ordered_filters = ['F0007','F0008','F0009','F0034','F0035','F0036','F0010','F0011','F0014']
 all_filters = ['open','F0008','F0009','F0034','F0011','F0007','F0036','F0035','F0010','F0014','blank']
 list_filters=[0,1,2,3,4,5,6,7,8,9,10]
 labs=["open","10-12$\mu$m","12-14$\mu$m","17-18.5$\mu$m","22.5-27.5$\mu$m","7.9-9.5$\mu$m","20.5-22.5$\mu$m","18.5-20.5$\mu$m","17.25-19.75$\mu$m","30-50$\mu$m","blank"]
@@ -30,7 +29,7 @@ wls=array([0,11,13,17.75,25,8.7,21.5,19.5,18.5,40,0])
 colors=["gold","red","blue","black","orange","yellow","cyan","green","Chartreuse","LightBlue"]
 illuminated = list(loadtxt("../Params/illuminated_pixels.txt")) # illuminated pixels
 
-meas = "SET1"
+meas = "SET2"
 
 """ Temperature file """
 
@@ -111,18 +110,18 @@ rad = []
 tms = []
 
 nf = len(sequences)
-#nf = 40
+#nf = 30
 print nf
 
-counts_nadir = zeros([11,nf])
-counts_hbb = zeros([11,nf])
-counts_abb = zeros([11,nf])
-counts_zbb = zeros([11,nf])
+counts_nadir = ma.zeros([11,nf])
+counts_hbb = ma.zeros([11,nf])
+counts_abb = ma.zeros([11,nf])
+counts_zbb = ma.zeros([11,nf])
 rad_nad = zeros([11,nf])
 rad_hbb = zeros([11,nf])
 rad_abb = zeros([11,nf])
 rad_zbb = zeros([11,nf])
-rad_firr = zeros([11,nf])
+rad_firr = ma.zeros([11,nf])
 dates_firr=[]
 
 mean_counts = []
@@ -135,7 +134,10 @@ last_ind = 0
 start = 0
 nvalues = []
 t_nad = []
-
+valid_temp = [] # different NBB temperatures
+temp_error = []
+mean_error = []
+std_error = []
 
 for k,s in enumerate(sequences[:nf]):    
     seq = FirrSequence(s,10,s)
@@ -147,31 +149,42 @@ for k,s in enumerate(sequences[:nf]):
     t_nad+=[t_nadir[ind]]
     
     if selection[ind]==1: #  in NBB stable conditions
-        print "New data"
-        
+        print "-----------------------New data---------------------"
+        # 1-Calculate theoretical radiances        
         rad_nad[:,k] = array([Toolbox.radiance(t_nadir[ind]+273.15,all_filters[j],emiss_wls,emiss,firr_pm[ind_firr]+273.15) for j in list_filters])
         rad_hbb[:,k] = array([Toolbox.radiance(firr_hbb[ind_firr]+273.15,all_filters[j],emiss_wls,emiss,firr_pm[ind_firr]+273.15) for j in list_filters])
         rad_abb[:,k] = array([Toolbox.radiance(firr_abb[ind_firr]+273.15,all_filters[j],emiss_wls,emiss,firr_pm[ind_firr]+273.15) for j in list_filters])        
         rad_zbb[:,k] = array([Toolbox.radiance(t_zenith[ind]+273.15,all_filters[j],emiss_wls,emiss,firr_pm[ind_firr]+273.15) for j in list_filters])
-        diff = abs(rad_nad[:,k]-last_rad)
-        
-        if start == 1 and any(diff > 0.05): # means that changed temperature
-            print "-------------New temperature--------------"
-            nvalues+=[shape(temp_counts)[0]]
-            temp_counts = array(temp_counts)
-            temp_rad = array(temp_rad) 
-            mean_counts+=[array(mean(temp_counts,axis=0))]
-            std_counts+=[array(std(temp_counts,axis=0))]   
-            mean_rad+=[mean(temp_rad,axis=0)]                              
+   
+        diff = abs(rad_nad[:,k]-last_rad) # detect new temperature step               
+        if start == 1 and any(diff > 0.05): 
+            print "-----------------------New temperature--------------"
+            nvalues+=[shape(temp_counts)[0]] # number of sequences at each temperature step
+            valid_temp+=[previous_temp]
+            temp_counts = ma.masked_array(temp_counts)
+            temp_rad = ma.masked_array(temp_rad)            
+            mean_counts+=[mean(temp_counts,axis=0)]
+            std_counts+=[std(temp_counts,axis=0)]
+            mean_rad+=[mean(temp_rad,axis=0)]  
+            temp_error = ma.masked_array(temp_error)
+            mean_error+=[mean(temp_error,axis=0)]  
+            std_error+=[std(temp_error,axis=0)]                
             temp_counts = []
             temp_rad = []
+            temp_error = []
             
+        previous_temp = t_nadir[ind]    
         start = 1    
         last_rad = rad_nad[:,k]             
-        seq.get_radiance(all_filters[:-1],spav="all")
+        seq.get_radiance(all_filters[:-1],spav="fast",non_ill=0)
         rad_firr[:,k] = seq.all_radiance[:,0]
-        counts_nadir[:,k] = mean(seq.all_mean[:,2,:],axis=1)-mean(seq.all_mean[:,1,:],axis=1) # using ABB because probably more stable
+        temp_error+=[rad_firr[:,k]-rad_nad[:,k]] 
+#        rad_firr[:,k] = seq.all_radiance[:,1]
+#        temp_error+=[rad_firr[:,k]-rad_zbb[:,k]] 
+        counts_nadir[:,k] = ma.average(seq.all_mean[:,2,:],axis=1)-ma.average(seq.all_mean[:,1,:],axis=1) # only two pixels because spatial average 
+        # using ABB because probably more stable
 #        counts_nadir[:,k] = mean(seq.all_mean[:,2,illuminated],axis=1)-mean(seq.all_mean[:,0,illuminated],axis=1) # using ABB because probably more stable
+        
         counts_hbb[:,k] = mean(seq.all_mean[:,1,:],axis=1)-mean(seq.all_mean[:,1,:],axis=1) 
         counts_abb[:,k] = mean(seq.all_mean[:,0,:],axis=1)-mean(seq.all_mean[:,1,:],axis=1) 
         counts_zbb[:,k] = mean(seq.all_mean[:,3,:],axis=1)-mean(seq.all_mean[:,1,:],axis=1)
@@ -180,16 +193,24 @@ for k,s in enumerate(sequences[:nf]):
 
 # Last step
 print "New temperature"
-nvalues+=[shape(temp_counts)[0]]
-temp_counts = array(temp_counts)
-temp_rad = array(temp_rad) 
+nvalues+=[shape(temp_counts)[0]] # number of sequences at each temperature step
+valid_temp+=[previous_temp]
+temp_counts = ma.masked_array(temp_counts) # eliminates bad values
+temp_rad = ma.masked_array(temp_rad)            
 mean_counts+=[mean(temp_counts,axis=0)]
-std_counts+=[std(temp_counts,axis=0)]   
-mean_rad+=[mean(temp_rad,axis=0)]
-  
+std_counts+=[std(temp_counts,axis=0)]
+mean_rad+=[mean(temp_rad,axis=0)]  
+temp_error = ma.masked_array(temp_error)
+mean_error+=[mean(temp_error,axis=0)]  
+std_error+=[std(temp_error,axis=0)] 
+valid_temp = array(valid_temp)
+print "valid_temp",valid_temp 
+
 mean_rad = array(mean_rad)
 mean_counts = array(mean_counts)
 std_counts = array(std_counts) 
+mean_error = array(mean_error)
+std_error = array(std_error) 
 
 print shape(mean_rad),shape(mean_counts),shape(std_counts)
 
@@ -198,16 +219,21 @@ x = linspace(0,30)
 
 fig = figure(5,figsize=(13,8))
 
-for j in range(1,10):       
-    slope, intercept, r_value, p_value, std_err = stats.linregress(mean_rad[:,j],mean_counts[:,j])    
+npoints,nfil = shape(mean_rad)
+details = zeros([nfil,3]) # mean std_counts, slope, std_error
+
+for fil in ordered_filters:
+    j = all_filters.index(fil)       
+    slope, intercept, r_value, p_value, std_err = stats.linregress(mean_rad[:,j],mean_counts[:,j])  
     plot(x,x*slope+intercept,color=colors[j],label="%s -- %.2f"%(labs[j],slope),alpha=0.5)
-    plot(rad_abb[j,:],counts_abb[j,:],"o",color="k")
-    plot(rad_hbb[j,:],counts_hbb[j,:],"o",color="k")
-    plot(rad_zbb[j,:],counts_zbb[j,:],"o",color="k")
+    grid()
+#    plot(rad_abb[j,:],counts_abb[j,:],"o",color="k")
+#    plot(rad_hbb[j,:],counts_hbb[j,:],"o",color="k")
+#    plot(rad_zbb[j,:],counts_zbb[j,:],"o",color="k")
     errorbar(mean_rad[:,j],mean_counts[:,j],yerr=std_counts[:,j],xerr=0,marker="o",linestyle="",markersize=3,mew=1.,mfc=colors[j],mec="k",elinewidth=1.5,color=colors[j])
-    print labs[j]
-    print "mean_std",mean(std_counts[:,j])
-    print slope,r_value,std_err
+    details[j,0] = mean(std_counts[:,j])
+    details[j,1] = slope
+    details[j,2] = std_err    
         
 legend(loc=0)    
 xlabel(r"Radiance (W~m$^{-2}$~sr$^{-1}$)",size=20)
@@ -215,15 +241,29 @@ ylabel(r"Counts",size=20)
 #ylim(-300,300)
 ylim(-50,600)
 
-#fig.savefig("Figures/LRTech_Linearity.pdf",dpi=300,format="pdf")       
+#fig.savefig("/home/quentin/Papiers/FIRR_AMT/Figures/LRTech_Linearity_nospav.pdf",dpi=300,format="pdf")       
 
-counts_nadir = ma.masked_equal(counts_nadir,0)
+show()
+
 
 x = linspace(-50,70)
 fig1 = figure(1,figsize=(13,8))
 
-for j in range(1,10):
-    plot(t_nad,rad_firr[j,:]-rad_nad[j,:],"o",markersize=3,color=colors[j])
+print "mean_error",mean_error
+print "std_error",std_error
+
+savetxt("temperature_steps.dat",valid_temp) 
+savetxt("mean_counts.dat",mean_counts) 
+savetxt("std_counts.dat",std_counts) 
+savetxt("mean_error.dat",mean_error) 
+savetxt("std_error.dat",mean_error) 
+savetxt("details.dat",details) 
+savetxt("number_of_sequences.dat",array(nvalues))
+
+for num,fil in enumerate(ordered_filters):
+    j = all_filters.index(fil)  
+    errorbar(valid_temp+(num-5)*0.4,mean_error[:,j],yerr=std_error[:,j],xerr=0,marker="o",linestyle="",markersize=3,mew=1.,mfc=colors[j],mec="k",elinewidth=1.5,color=colors[j])
+#    plot(t_nad,rad_firr[j,:]-rad_nad[j,:],"o",markersize=3,color=colors[j])
     plot(x,0*x)
 #    figure(2)
 #    plot(dates_firr,rad_firr[j,:],"o",color=colors[j])
@@ -236,6 +276,6 @@ ylim(-0.2,0.2)
 ylabel(r"Difference between retrieved and theoretical radiances (W~m$^{-2}$~sr$^{-1}$)",size=20)
 xlabel(r"Temperature ($^{\circ}$C)",size=20)
 
-#fig1.savefig("Figures/LRTech_NBB_Retrieval.pdf",dpi=300,format="pdf")
+#fig1.savefig("/home/quentin/Papiers/FIRR_AMT/Figures/LRTech_NBB_Retrieval_nospav.pdf",dpi=300,format="pdf")
 
 show()

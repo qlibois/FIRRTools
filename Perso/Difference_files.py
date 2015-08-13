@@ -12,20 +12,26 @@ directory = "/media/quentin/LACIE SHARE/FIRR_measurements/LR-TECH/SET1/2015-07-3
 directory = "/media/quentin/LACIE SHARE/FIRR_measurements/LR-TECH/SET1/2015-07-30_16-29-09.0957" # 35°C
 #directory = "/media/quentin/LACIE SHARE/FIRR_measurements/LR-TECH/SET1/2015-07-30_19-01-57.0327" # 55°C
 #directory = "/media/quentin/LACIE SHARE/FIRR_measurements/LR-TECH/SET2/2015-07-30_21-11-28.0353" # 55°C
-
+directory = "/media/quentin/LACIE SHARE/FIRR_measurements/LR-TECH/SET2/2015-07-31_00-22-52.0748"
+directory = "/media/quentin/LACIE SHARE/FIRR_measurements/LR-TECH/SET2/2015-07-31_00-16-56.0710"
 sequence = FirrSequence(directory,10,directory)
 sequence.organized(spav="None")
 
 counts = sequence.all_mean
+stds = sequence.all_std
+
+std_nad = stds[:,2,:]
 
 ambient = counts[:,0,:]
 hot = counts[:,1,:]
 nadir = counts[:,2,:]
 zenith = counts[:,3,:]
 
-for j in range(11):
+for j in range(9,11):
 #    imshow(reshape(hot[j,:]-zenith[j,:],(60,80)),vmin=-2,vmax=2)
-    imshow(reshape(zenith[j,:]-nadir[j,:],(60,80)),vmin=-1,vmax=1)
+#    imsh
+
+    imshow(reshape(nadir[j,:]-hot[j,:],(60,80)))
     colorbar()
     title("%s"%labs[j])
     show()

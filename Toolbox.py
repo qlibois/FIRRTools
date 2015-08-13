@@ -88,11 +88,9 @@ def get_calib(amb1,hot,scene,amb2,thot,tscene,tamb2,Tamb1,Thot,Tamb2,filtre,emis
   
     # Calibration for all scene measurements and all valid pixels
     for nv in range(nview):
-        correct_pixels=where(amb1[0]*hot[0]*scene[nv,:]*amb2[0]!=0)[0]             
-        Lscene[nv,:]=(scene[nv,:]-B0-r*tscene[nv])/G
+        correct_pixels=where(amb1[0]*hot[0]*scene[nv,:]*amb2[0]!=0)[0]
+        Lscene[nv,correct_pixels]=(scene[nv,:]-B0-r*tscene[nv])[correct_pixels]/G[correct_pixels]
         bt[nv,correct_pixels]=find_temp_planck(Lscene[nv,:],filtre)[correct_pixels]
-#        if filtre=="F0008":
-#            plot([Lamb1,Lhot,Lscene[nv,0]],[amb1,hot,scene[nv]],"o-")
-#            show()         	
-    
+
+    print "background",B0
     return G,B0,Lscene,bt 

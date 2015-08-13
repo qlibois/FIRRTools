@@ -23,7 +23,7 @@ class FirrRaw():
         self.mpos = header[3]   
         self.good = True        
 
-    def analyze(self,frame_number=1000,spav="None",non_ill=0):
+    def analyze(self,frame_number=1000,spav="None",non_ill=1):
         """Compute average frame and standard deviation
         frame_number: defines how many frames should be used (default is all frames)
         spav: spatial average to be computed
@@ -42,38 +42,52 @@ class FirrRaw():
             frame = array(np.fromfile(f, dtype=np.uint16,count=self.npixels)).astype(float) # values for all pixels, returned in a 1D array 
             
             if len(frame) == self.npixels: # prevent from keeping erroneous frames
-                tms+= [int(t)]                
-                if spav=="all": 
-                    """average on all illuminated pixels, only one value is saved per frame but an array is created to keep consistency with other options"""
-                    frame = mean(frame[illuminated]-non_ill*frame[non_illuminated])
-                    data_1D+= [frame*ones(2)] 
-                    
-                if isinstance(spav, int): 
-                    """spatial mooving average on a spav x spav square"""
-                    data_1D+=[Toolbox.get_av(frame,spav)]
-                                    
-                else: 
-                    """no spatial average"""
-                    data_1D+=[frame] # append new frame to existing ones
-                    
-        if data_1D == []: # mark bad file to avoid reading in a sequence
-            self.good = False
-                                   
-        self.mean = mean(array(data_1D),axis=0) 
-        self.std = std(array(data_1D),axis=0)
+                tms+= [int(t)]      
+                if spav == "fast": # like "all" without eliminating bad pixels before averaging
+                    frame = mean(frame[illuminated] - non_ill*frame[non_illuminated])
+                    data_1D+=[frame*ones(2)]
                 
-        if spav == "all":
-            corr=where(self.std<1.)[0]  # identify eroneous pixels
-           
+                elif isinstance(spav, int): 
+                    """spatial mooving average on a spav x spav square"""
+                    data_1D+= [Toolbox.get_av(frame,spav)]
+                    
+                else:
+                    data_1D+=[frame] # append new frame to existing ones
+                
+        if data_1D == []: # mark bad file to avoid reading in a sequence
+            self.good = False 
+            
+        elif shape(data_1D)[0] == 1: # mark bad file to avoid reading in a sequence
+            self.good = False                                  
+        
+        data_1D = array(data_1D)
+       
+        self.std = std(data_1D,axis=0) 
+        self.mean = mean(data_1D,axis=0) 
+
+        # remove bad pixels from analysis 
+
+        if spav == "fast":
+            corr = where(self.std<1.)[0]
+        
         elif isinstance(spav, int): 
             corr = where(self.std<1.2)[0]  
             
-        else: 
+        else:    
             corr = where(self.std<2.)[0]
                        
         if not corr.size:
-            print self.name,"No correct pixels"
+            print self.name,"No correct pixels"            
 
+        valid = ma.masked_array(data_1D,shape(data_1D)[0]*[self.std>=2.])           
+               
+        if spav=="all": 
+            """average on all illuminated pixels, only one value is saved per frame but an array is created to keep consistency with other options"""           
+            diff = mean(valid[:,illuminated],axis=1) - non_ill*mean(valid[:,non_illuminated],axis=1)  
+            self.mean = mean(diff)*ones(2)
+            self.std = std(diff)*ones(2)                                             
+            corr = where(self.std<1.)[0] 
+               
         self.all_tms = array(tms)
         self.tms = mean(tms)    
         self.correct_pixels = corr
