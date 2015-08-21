@@ -11,7 +11,7 @@ filtres_order = ['open','F0008','F0009','F0034','F0011','F0007','F0036','F0035',
 
 class FirrSeries():
     """Calculations over a complete series of FIRR measurements"""  
-    def __init__(self,folder,start_meas=datetime(2000,1,1),end_meas=datetime(2100,1,1)):    
+    def __init__(self,folder,start_meas=datetime(2000,1,1),end_meas=datetime(2100,1,1),detector=4,illuminated_pixels=193):    
         self.name = folder 
         sequences = glob.glob("%s/*"%self.name) 
         sequences = [s for s in sequences if os.path.isdir(s) and "Temperature.txt" in os.listdir(s)]
@@ -23,6 +23,8 @@ class FirrSeries():
         self.sequences = sequences[start:end]
         self.get_time_dir()
         self.start_date = Toolbox.get_time_seq(self.sequences[0]) 
+        self.detector = detector
+        self.illuminated = illuminated_pixels
 
     def get_time_dir(self):
         sd = self.name.rfind("201")
@@ -42,14 +44,14 @@ class FirrSeries():
         self.temp_time = all_time
         self.temperature = array(all_temp)        
         
-    def get_radiance(self,filtres_bt,npos=10,method="next",save=False):          
+    def get_radiance(self,filtres_bt,npos=10,method="next",spav="fast",non_ill=1,save=False):          
         good_seq=[s for s in self.sequences if "Temperature.txt" in os.listdir(s) and size(glob.glob("%s/*.raw"%s))%npos==0]      
         bt=[]  
         radiance=[]
         time=[]
         
         if save:
-            f=open("QuickLookData/brightness_temperature_%s.txt"%self.date,"w")
+            f=open("QuickLookData/Brightness_Temperature_%s.txt"%self.date,"w")
             f.write("Date {0}  \n".format(" ".join([fil for fil in filtres_order]))) 
             g=open("QuickLookData/Radiance_%s.txt"%self.date,"w")
             g.write("Date {0}  \n".format(" ".join([fil for fil in filtres_order]))) 
@@ -63,10 +65,10 @@ class FirrSeries():
             else:
                 next_seq = a
                 
-            seq = FirrSequence(a,npos,next_seq)
+            seq = FirrSequence(a,npos,next_seq,detector=self.detector,illuminated_pixels=self.illuminated)
             print "Sequence time",seq.date0
             nview=seq.npos-2              
-            seq.get_radiance(filtres_bt,method="next",spav="all") 
+            seq.get_radiance(filtres_bt,method="next",spav=spav,non_ill=non_ill) 
 #            print seq.real_timestamp[2:]
 #            raw_input()
             time+=seq.real_timestamp[2:]
@@ -75,8 +77,8 @@ class FirrSeries():
 #            rad+=[seq.rad[:,nv] for nv in range(nview)]
             if save:
                 for nv in range(nview):
-                    f.write("%s %s \n"%(datetime.strftime(seq.real_timestamp[nv+2],"%Y-%m-%d_%H-%M-%S")," ".join([str(a) for a in seq.bt[:,nv]])))
-                    g.write("%s %s \n"%(datetime.strftime(seq.real_timestamp[nv+2],"%Y-%m-%d_%H-%M-%S")," ".join([str(a) for a in seq.rad[:,nv]])))
+                    f.write("%s %s \n"%(datetime.strftime(seq.real_timestamp[nv+2],"%Y-%m-%d_%H-%M-%S")," ".join([str(a) for a in seq.all_bt[:,nv]])))
+                    g.write("%s %s \n"%(datetime.strftime(seq.real_timestamp[nv+2],"%Y-%m-%d_%H-%M-%S")," ".join([str(a) for a in seq.all_radiance[:,nv]])))
         if save:
             f.close()
             g.close()

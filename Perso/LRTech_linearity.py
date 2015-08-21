@@ -21,15 +21,15 @@ rc('text', usetex=True)
 rc('xtick',labelsize=22) 
 rc('ytick',labelsize=22)
 
-ordered_filters = ['F0007','F0008','F0009','F0034','F0035','F0036','F0010','F0011','F0014']
+ordered_filters = ['F0007','F0008','F0009','F0034','F0035','F0010','F0036','F0011','F0014']
 all_filters = ['open','F0008','F0009','F0034','F0011','F0007','F0036','F0035','F0010','F0014','blank']
 list_filters=[0,1,2,3,4,5,6,7,8,9,10]
-labs=["open","10-12$\mu$m","12-14$\mu$m","17-18.5$\mu$m","22.5-27.5$\mu$m","7.9-9.5$\mu$m","20.5-22.5$\mu$m","18.5-20.5$\mu$m","17.25-19.75$\mu$m","30-50$\mu$m","blank"]
+labs=["open","10-12~$\mu$m","12-14~$\mu$m","17-18.5~$\mu$m","22.5-27.5~$\mu$m","7.9-9.5~$\mu$m","20.5-22.5~$\mu$m","18.5-20.5~$\mu$m","17.25-19.75~$\mu$m","30-50~$\mu$m","blank"]
 wls=array([0,11,13,17.75,25,8.7,21.5,19.5,18.5,40,0])
-colors=["gold","red","blue","black","orange","yellow","cyan","green","Chartreuse","LightBlue"]
+colors=["grey","DarkOrange","Red","Chartreuse","cyan","Gold","LightBlue","green","black","blue"]
 illuminated = list(loadtxt("../Params/illuminated_pixels.txt")) # illuminated pixels
 
-meas = "SET2"
+meas = "SET1"
 
 """ Temperature file """
 
@@ -140,7 +140,7 @@ mean_error = []
 std_error = []
 
 for k,s in enumerate(sequences[:nf]):    
-    seq = FirrSequence(s,10,s)
+    seq = FirrSequence(s,10,s,illuminated_pixels = 69)
     tms0 = seq.date0
     ind = searchsorted(dates,tms0)
     ind_firr = searchsorted(temp_firr_time,tms0)
@@ -176,11 +176,11 @@ for k,s in enumerate(sequences[:nf]):
         previous_temp = t_nadir[ind]    
         start = 1    
         last_rad = rad_nad[:,k]             
-        seq.get_radiance(all_filters[:-1],spav="fast",non_ill=0)
-        rad_firr[:,k] = seq.all_radiance[:,0]
-        temp_error+=[rad_firr[:,k]-rad_nad[:,k]] 
-#        rad_firr[:,k] = seq.all_radiance[:,1]
-#        temp_error+=[rad_firr[:,k]-rad_zbb[:,k]] 
+        seq.get_radiance(all_filters[:-1],spav="fast",non_ill=1)
+#        rad_firr[:,k] = seq.all_radiance[:,0]
+#        temp_error+=[rad_firr[:,k]-rad_nad[:,k]] 
+        rad_firr[:,k] = seq.all_radiance[:,1]
+        temp_error+=[rad_firr[:,k]-rad_zbb[:,k]] 
         counts_nadir[:,k] = ma.average(seq.all_mean[:,2,:],axis=1)-ma.average(seq.all_mean[:,1,:],axis=1) # only two pixels because spatial average 
         # using ABB because probably more stable
 #        counts_nadir[:,k] = mean(seq.all_mean[:,2,illuminated],axis=1)-mean(seq.all_mean[:,0,illuminated],axis=1) # using ABB because probably more stable
@@ -237,11 +237,11 @@ for fil in ordered_filters:
         
 legend(loc=0)    
 xlabel(r"Radiance (W~m$^{-2}$~sr$^{-1}$)",size=20)
-ylabel(r"Counts",size=20)    
+ylabel(r"Counts difference",size=20)    
 #ylim(-300,300)
 ylim(-50,600)
 
-#fig.savefig("/home/quentin/Papiers/FIRR_AMT/Figures/LRTech_Linearity_nospav.pdf",dpi=300,format="pdf")       
+#fig.savefig("/home/quentin/Papiers/FIRR_AMT/Figures/LRTech_Linearity.pdf",dpi=300,format="pdf")       
 
 show()
 
@@ -252,30 +252,33 @@ fig1 = figure(1,figsize=(13,8))
 print "mean_error",mean_error
 print "std_error",std_error
 
-savetxt("temperature_steps.dat",valid_temp) 
-savetxt("mean_counts.dat",mean_counts) 
-savetxt("std_counts.dat",std_counts) 
-savetxt("mean_error.dat",mean_error) 
-savetxt("std_error.dat",mean_error) 
-savetxt("details.dat",details) 
-savetxt("number_of_sequences.dat",array(nvalues))
+#savetxt("temperature_steps.dat",valid_temp) 
+#savetxt("mean_counts.dat",mean_counts) 
+#savetxt("std_counts.dat",std_counts) 
+#savetxt("mean_error.dat",mean_error) 
+#savetxt("std_error.dat",mean_error) 
+#savetxt("details.dat",details) 
+#savetxt("number_of_sequences.dat",array(nvalues))
 
 for num,fil in enumerate(ordered_filters):
     j = all_filters.index(fil)  
+    plot([0,1],[-10,-10],color=colors[j],label=labs[j],alpha=0.5)
     errorbar(valid_temp+(num-5)*0.4,mean_error[:,j],yerr=std_error[:,j],xerr=0,marker="o",linestyle="",markersize=3,mew=1.,mfc=colors[j],mec="k",elinewidth=1.5,color=colors[j])
 #    plot(t_nad,rad_firr[j,:]-rad_nad[j,:],"o",markersize=3,color=colors[j])
-    plot(x,0*x)
+    plot(x,0*x,"k")
 #    figure(2)
 #    plot(dates_firr,rad_firr[j,:],"o",color=colors[j])
 #    plot(dates_firr,rad_nad[j,:],"-",color=colors[j])
  
 figure(1) 
+legend(loc=0)
 xlim(-30,60)
 grid()
-ylim(-0.2,0.2)
+ylim(-0.1,0.2)
 ylabel(r"Difference between retrieved and theoretical radiances (W~m$^{-2}$~sr$^{-1}$)",size=20)
 xlabel(r"Temperature ($^{\circ}$C)",size=20)
 
-#fig1.savefig("/home/quentin/Papiers/FIRR_AMT/Figures/LRTech_NBB_Retrieval_nospav.pdf",dpi=300,format="pdf")
+#fig1.savefig("/home/quentin/Papiers/FIRR_AMT/Figures/LRTech_NBB_Retrieval.pdf",dpi=300,format="pdf")
+#fig1.savefig("/home/quentin/Papiers/FIRR_AMT/Figures/LRTech_ZBB_Retrieval.pdf",dpi=300,format="pdf")
 
 show()

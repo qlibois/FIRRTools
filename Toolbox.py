@@ -42,7 +42,7 @@ def radiance(temp,filtre,epsilon_wls,epsilon,Tpm):
         trans=zeros_like(wls)
         
     else:     
-        data=loadtxt("%s/Params/Transmittance/%s.dat"%(local_path,filtre),skiprows=1)    
+        data=loadtxt("%s/Params/Transmittance_new/%s.dat"%(local_path,filtre),skiprows=1)    
         wls=1e-6*data[:,0]
         trans=maximum(data[:,1],0)
         
@@ -50,7 +50,10 @@ def radiance(temp,filtre,epsilon_wls,epsilon,Tpm):
     
     # Accounting for radiation at Tpm reflected by BB 
     planck=2*h*c**2/wls**5*(new_em*1./(exp(h*c/(wls*kb*(temp)))-1)+(1-new_em)*1./(exp(h*c/(wls*kb*(Tpm)))-1))*trans*0.01
-    
+#    plot(1e6*wls,planck)
+#    title(filtre)
+#    xlim(0,50)
+#    show()
     return trapz(planck,wls)  
     
 """Return brightness temperature corresponding to radiance"""    
@@ -88,9 +91,8 @@ def get_calib(amb1,hot,scene,amb2,thot,tscene,tamb2,Tamb1,Thot,Tamb2,filtre,emis
   
     # Calibration for all scene measurements and all valid pixels
     for nv in range(nview):
-        correct_pixels=where(amb1[0]*hot[0]*scene[nv,:]*amb2[0]!=0)[0]
+        correct_pixels=where(amb1*hot*scene[nv,:]*amb2!=0)[0]
         Lscene[nv,correct_pixels]=(scene[nv,:]-B0-r*tscene[nv])[correct_pixels]/G[correct_pixels]
         bt[nv,correct_pixels]=find_temp_planck(Lscene[nv,:],filtre)[correct_pixels]
 
-    print "background",B0
     return G,B0,Lscene,bt 
