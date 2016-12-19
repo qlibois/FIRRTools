@@ -28,7 +28,7 @@ data = FirrSeries(series)
 #seqs = glob("/media/quentin/LACIE SHARE/FIRR_measurements/LR-TECH/SET2/2015-07-30_22*")
 #seq = "/media/quentin/LACIE SHARE/FIRR_measurements/LR-TECH/SET2/2015-07-31_05-26-02.0030"
 npos = 10
-npix=[1,9,25,45,69,109,145,193,249,305]
+npix=array([1,9,25,45,69,109,145,193,249,305])
       
 all_sigma = zeros([len(npix),11])      
       
@@ -63,13 +63,18 @@ for m,np in enumerate(npix):
             k = all_filters.index(fil)
             all_sigma[m,k] = mean(all_std0[:,k]) 
             
-fig = figure(12,figsize=(12,6))            
+fig = figure(12,figsize=(13,7))  
+ax = gca()          
+
 for fil in ordered_filters:
     k = all_filters.index(fil)
     plot(npix,all_sigma[:,k],marker="o",linestyle="-",markersize=3,mew=1.,mfc=colors[k],mec="k",color=colors[k],label=labs[k])
-    
-xlabel("Number of illuminated pixels",size=20)    
-ylabel("Counts standard deviation",size=20) 
+
+#plot(npix,1.5/sqrt(npix),"k-",label="1/N")
+        
+text(0.06,0.05,"(a)",fontsize=22,transform=ax.transAxes)    
+xlabel("Number of illuminated pixels",size=24)    
+ylabel("Counts standard deviation",size=24) 
 ylim(0,1.6)  
 xlim(0,320)
 grid() 
@@ -77,3 +82,4 @@ legend(loc=0,numpoints=1)
 show()    
 
 fig.savefig("/home/quentin/Papiers/FIRR_AMT/Figures/NER.pdf",dpi=300,format="pdf")
+#fig.savefig("/home/quentin/Documents/Presentations/Figures/NER.jpg",dpi=300,format="jpg")

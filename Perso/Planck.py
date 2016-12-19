@@ -6,6 +6,7 @@ Created on Wed Sep 23 08:34:11 2015
 """
 
 from pylab import *
+from Toolbox import radiance_BB
 
 #-------------Latex Style--------------
 rc('font',**{'family':'serif','serif':['Computer Modern'],'size':'20'})
@@ -21,10 +22,23 @@ rc('ytick',labelsize=24)
 h=6.62e-34
 c=3e8
 kb=1.38e-23
-wls = 1e-6*linspace(1,50,2000)
+wls = 1e-6*linspace(1,100,2000)
 new_em = ones_like(wls) 
+ordered_filters = ['F0007','F0008','F0009','F0034','F0035','F0036','F0011'] # increasing wl
 
 colors = ["red","orange","green","blue"]
+
+temp = -30+273.15
+planck = 2*h*c**2/wls**5*new_em*1./(exp(h*c/(wls*kb*(temp)))-1)
+print 0.02*trapz(planck,wls)
+
+temp = -30+273.15+2
+planck2 = 2*h*c**2/wls**5*new_em*1./(exp(h*c/(wls*kb*(temp)))-1)
+print trapz(planck2,wls) - trapz(planck,wls)
+
+
+for fil in ordered_filters:
+    print fil,0.1*radiance_BB(temp,fil,wls,new_em,300)
 
 fig = figure(12,figsize=(12,8))
 for k,temp0 in enumerate([20,0,-20,-60]):
@@ -41,4 +55,6 @@ ylabel(r"Radiance (AU)",size=25)
 ylim(0,5.5)
 show()
 
-fig.savefig("/home/quentin/Documents/Presentations/Figures/Planck.jpg",dpi=300,format="jpg")
+
+
+#fig.savefig("/home/quentin/Documents/Presentations/Figures/Planck.jpg",dpi=300,format="jpg")

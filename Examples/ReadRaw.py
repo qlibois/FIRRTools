@@ -15,18 +15,26 @@ rc('ytick',labelsize=22)
 number of pixels per frame, average frame and standard deviation of all frames"""
 
 rawfile = "Data/test.raw"
+#rawfile = "/home/quentin/FIRR/Eureka/TB_FIRR/FIRR_2016-02-27_21-19-12.0799_Data_000007.raw"
 
 raw_data_nospav = FirrRaw(rawfile) # create a FirrRaw object
 raw_data_spav = FirrRaw(rawfile) 
 
 raw_data_nospav.analyze() # Analyze the file to extract all necessary information
-raw_data_spav.analyze(spav=2) 
+raw_data_spav.analyze(spav="fast")
+
+print "mean counts",raw_data_spav.mean
+
+raw_data_spav.analyze(spav=2)
+
+print "mean counts",raw_data_spav.mean
+
 
 print "mirror position",raw_data_nospav.mpos
 print "filter position",raw_data_nospav.fpos
 print "number of frames",raw_data_nospav.nframes
 print "number of pixels per frame",raw_data_nospav.npixels
-print "number of bad pixels",raw_data_nospav.npixels-shape(raw_data_nospav.correct_pixels)[1]
+print "number of bad pixels",raw_data_nospav.npixels-len(raw_data_nospav.correct_pixels)
 
 mean_image_nospav = raw_data_nospav.mean
 std_image_nospav = raw_data_nospav.std

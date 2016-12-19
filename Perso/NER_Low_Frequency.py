@@ -45,7 +45,7 @@ diff_non_ill = []
 
 for seq in data.sequences[80:120]:
     print seq
-    seq=FirrSequence(seq,npos,seq)
+    seq=FirrSequence(seq,npos,seq,detector=3,illuminated_pixels = 9)
     time+=[seq.date0]
     seq.organized(spav="fast",non_ill=0)  
     abb+=[seq.all_mean[:,0,0]]
@@ -63,8 +63,8 @@ hbb_non_ill = array(hbb_non_ill)
 diff = array(diff)
 diff_non_ill = array(diff_non_ill) 
 
-fig = figure(12,figsize=(12,6))            
-for fil in ["F0008"]:#ordered_filters:
+fig = figure(12,figsize=(13,7))            
+for fil in ["F0007"]:#ordered_filters:
     k = all_filters.index(fil)
     plot(time,diff[:,k]-mean(diff[:,k]),"b",marker="o",linestyle="-",linewidth=1.5,markersize=4,mew=1.,mfc="w",mec="k",color="k",label=r"Non corrected data")
     plot(time,diff_non_ill[:,k]-mean(diff_non_ill[:,k]),"b",marker="o",linestyle="-",linewidth=1.5,markersize=4,mew=1.,mfc="w",mec="r",color="r",label=r"Corrected data")
@@ -74,10 +74,12 @@ for fil in ["F0008"]:#ordered_filters:
 grid()   
 gca().xaxis.set_major_formatter(formatter)
 #gca().xaxis.set_major_locator(mdates.DayLocator(interval=5))   
-xlabel(r"Time",size=20)
-ylabel(r"Normalized counts",size=20)
+xlabel(r"Time",size=24)
+ylabel(r"Normalized counts",size=24)
 legend(loc=0,numpoints=1)
 show()
              
 
-fig.savefig("/home/quentin/Papiers/FIRR_AMT/Figures/NER_LF.pdf",dpi=300,format="pdf")
+#fig.savefig("/home/quentin/Papiers/FIRR_AMT/Figures/NER_LF.pdf",dpi=300,format="pdf")
+
+#fig.savefig("/home/quentin/Documents/Presentations/Figures/NER_LF.jpg",dpi=300,format="jpg")

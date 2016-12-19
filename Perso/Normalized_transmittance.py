@@ -27,7 +27,7 @@ colors=["grey","DarkOrange","Red","Chartreuse","cyan","Gold","LightBlue","green"
 # F0007
 old = loadtxt("../Params/Transmittance_new/F0007.dat",skiprows=1) 
 
-savetxt("../Params/Transmittance_new_normalized/F0007.dat",old)
+#savetxt("../Params/Transmittance_new_normalized/F0007.dat",old)
 
 # F0008
 old = loadtxt("../Params/Transmittance_new/F0008.dat",skiprows=1) 
@@ -65,19 +65,20 @@ savetxt("../Params/Transmittance_new/F0014.dat",old)
 fig1 = figure(13,figsize=(12,7))
 
 for filtre in ordered_filters:
-    old = loadtxt("../Params/Transmittance_new/F0008.dat",skiprows=1)
+    old = loadtxt("../Params/Transmittance_new/%s.dat"%filtre,skiprows=1)
     wls = old[:,0]
     trans = old[:,1]
-    tran_norm = trans/trapz(trans,wls) 
-    old[:,1] = trans_norm
-    savetxt("../Params/Transmittance_new_normalized/F0008.dat",old)
+#    tran_norm = trans/trapz(trans,wls) 
+#    old[:,1] = trans_norm
+#    savetxt("../Params/Transmittance_new_normalized/F0008.dat",old)
+    k=all_filters.index(filtre)
     plot(wls,trans,color=colors[k],linewidth=1.5,label = labs[k],alpha=0.8)
     
 legend(loc=0)
 ylim(0,100)
-xlim(0,150)
-xlabel("Wavelength ($\mu$m)",size=20)
-ylabel("Transmittance ($\%$)",size=20)
+xlim(0,80)
+xlabel("Wavelength ($\mu$m)",size=24)
+ylabel("Transmittance ($\%$)",size=24)
 grid()
 
 #fig1.savefig("/home/quentin/Papiers/FIRR_AMT/Figures/Filters.pdf",dpi=300,format="pdf")

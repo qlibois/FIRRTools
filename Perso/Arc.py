@@ -19,13 +19,14 @@ rc('ytick',labelsize=22)
 all_filters = ['open','F0008','F0009','F0034','F0011','F0007','F0036','F0035','F0010','F0014','blank']
 colors=["grey","DarkOrange","Red","Chartreuse","cyan","Gold","LightBlue","green","black","blue"]
 
-tir = 'F0009'
-fir = 'F0014'
+tir = 'F0008'
+fir = 'F0009'
+fir2 = 'F0009'
 
-date="2015-02-21"
+date="2015-07-02"
 bt_file = "QuickLookData/Brightness_Temperature_%s.txt"%date
 
-def plot_arc(name_file,b1,b2,s,e):
+def plot_arc(name_file,tir,fir,s,e):
     dates = []
     bt = []
     fichier = open(name_file,"r")
@@ -37,15 +38,25 @@ def plot_arc(name_file,b1,b2,s,e):
     
     a,b = searchsorted(dates,[s,e])        
     bt=array(bt)    
-    plot(bt[a:b,b2]-273.15,bt[a:b,b2]-bt[a:b,b1],"o-",label="%s"%date)
-
+    figure(1)
+#    plot(dates[a:b],bt[a:b,tir],"o-",label="%s"%date)
+#    plot(bt[a:b,fir],bt[a:b,fir]-bt[a:b,tir],"o",label="%s"%date)
+    plot(bt[a:b,fir],bt[a:b,tir],"o",label="%s"%date)
+#    figure(2)
+#    plot(dates[a:b],bt[a:b,fir],"o-",label="%s"%date)
+#    ylim(0,50)
+    
 ntir = all_filters.index(tir)
 nfir = all_filters.index(fir)
 
-s = datetime(2015,02,21,12,51)
-e = datetime(2015,02,21,12,53)
+s1 = datetime(2015,07,03,10,0)
+e1 = datetime(2015,07,03,11,20)
 
-plot_arc(bt_file,ntir,nfir,s,e) 
+s2 = datetime(2015,07,03,11,20)
+e2 = datetime(2015,07,03,13,0)
+
+plot_arc(bt_file,ntir,nfir,s1,e1) 
+plot_arc(bt_file,ntir,nfir,s2,e2) 
 
 #fichier="cloudy_sky_2015_02_22.txt"
 #plot_arc(fichier,4,9)    
